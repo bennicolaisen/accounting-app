@@ -8,6 +8,8 @@
   --income-bg: #e6f7f0;
   --expense: #d64545;
   --expense-bg: #fdecec;
+  --savings: #0e7c86;
+  --savings-bg: #e2f4f5;
   --accent: #3860d6;
   --accent-bg: #eaefff;
   --radius: 12px;
@@ -256,6 +258,10 @@ body {
   border-radius: 6px;
 }
 
+.category-bar-fill.savings {
+  background: var(--savings);
+}
+
 .list-panel {
   margin-bottom: 16px;
 }
@@ -322,6 +328,7 @@ body {
 
 .tx-amount.income { color: var(--income); }
 .tx-amount.expense { color: var(--expense); }
+.tx-amount.savings { color: var(--savings); }
 
 .tx-delete {
   border: none;

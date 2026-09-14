@@ -48,6 +48,12 @@ function monthKeyOf(dateStr) {
   return dateStr.slice(0, 7);
 }
 
+function txKind(t) {
+  if (t.type === "wage") return "income";
+  if (t.category === "Savings") return "savings";
+  return "expense";
+}
+
 function shiftMonth(monthKey, delta) {
   const [y, m] = monthKey.split("-").map(Number);
   const d = new Date(y, m - 1 + delta, 1);
@@ -100,17 +106,18 @@ function renderTransactionList() {
 
   txList.innerHTML = monthTx
     .map((t) => {
-      const isIncome = t.type === "wage";
+      const kind = txKind(t);
+      const isIncome = kind === "income";
       const sign = isIncome ? "+" : "-";
       const tag = isIncome ? "Wage" : t.category || "Expense";
       return `
-        <li class="tx-item">
+        <li class="tx-item ${kind}">
           <span class="tx-date">${t.date}</span>
           <span class="tx-desc">
             <span class="tx-title">${escapeHtml(t.description)}</span>
             <span class="tx-tag">${escapeHtml(tag)}</span>
           </span>
-          <span class="tx-amount ${isIncome ? "income" : "expense"}">${sign}${formatMoney(t.amount)}</span>
+          <span class="tx-amount ${kind}">${sign}${formatMoney(t.amount)}</span>
           <button class="tx-delete" data-id="${t.id}" title="Delete">&times;</button>
         </li>`;
     })
@@ -136,10 +143,11 @@ function renderCategoryChart() {
     .sort((a, b) => b[1] - a[1])
     .map(([category, amount]) => {
       const pct = max > 0 ? Math.round((amount / max) * 100) : 0;
+      const kind = category === "Savings" ? "savings" : "expense";
       return `
         <div class="category-row">
           <span>${escapeHtml(category)}</span>
-          <span class="category-bar-track"><span class="category-bar-fill" style="width:${pct}%"></span></span>
+          <span class="category-bar-track"><span class="category-bar-fill ${kind}" style="width:${pct}%"></span></span>
           <span>${formatMoney(amount)}</span>
         </div>`;
     })
