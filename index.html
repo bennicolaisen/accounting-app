@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="sv">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Personal Finance Tracker</title>
+  <title>Privatekonomi</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Finance" />
+  <meta name="apple-mobile-web-app-title" content="Ekonomi" />
   <meta name="theme-color" content="#3860d6" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -16,112 +16,112 @@
   <div class="app">
     <header class="app-header">
       <div class="brand">
-        <span class="brand-mark">$</span>
-        <h1>Finance Tracker</h1>
+        <span class="brand-mark">kr</span>
+        <h1>Privatekonomi</h1>
       </div>
       <div class="month-picker">
-        <button id="prevMonth" class="icon-btn" title="Previous month">&larr;</button>
+        <button id="prevMonth" class="icon-btn" title="Föregående månad">&larr;</button>
         <input type="month" id="monthSelect" />
-        <button id="nextMonth" class="icon-btn" title="Next month">&rarr;</button>
+        <button id="nextMonth" class="icon-btn" title="Nästa månad">&rarr;</button>
       </div>
     </header>
 
     <main>
       <section class="summary-grid">
         <div class="card summary-card income">
-          <span class="card-label">Wages this month</span>
-          <span class="card-value" id="sumIncome">$0.00</span>
+          <span class="card-label">Lön denna månad</span>
+          <span class="card-value" id="sumIncome">0,00 kr</span>
         </div>
         <div class="card summary-card expense">
-          <span class="card-label">Expenses this month</span>
-          <span class="card-value" id="sumExpense">$0.00</span>
+          <span class="card-label">Utgifter denna månad</span>
+          <span class="card-value" id="sumExpense">0,00 kr</span>
         </div>
         <div class="card summary-card balance">
-          <span class="card-label">Balance this month</span>
-          <span class="card-value" id="sumBalance">$0.00</span>
+          <span class="card-label">Saldo denna månad</span>
+          <span class="card-value" id="sumBalance">0,00 kr</span>
         </div>
         <div class="card summary-card total">
-          <span class="card-label">All-time balance</span>
-          <span class="card-value" id="sumTotal">$0.00</span>
+          <span class="card-label">Totalt saldo</span>
+          <span class="card-value" id="sumTotal">0,00 kr</span>
         </div>
       </section>
 
       <section class="panels">
         <div class="panel forms-panel">
           <div class="panel-tabs">
-            <button class="tab-btn active" data-tab="wage">Add Wage</button>
-            <button class="tab-btn" data-tab="expense">Add Expense</button>
+            <button class="tab-btn active" data-tab="wage">Lägg till lön</button>
+            <button class="tab-btn" data-tab="expense">Lägg till utgift</button>
           </div>
 
           <form id="wageForm" class="entry-form">
             <label>
-              Date
+              Datum
               <input type="date" name="date" required />
             </label>
             <label>
-              Source
-              <input type="text" name="description" placeholder="e.g. Salary, Freelance" required />
+              Källa
+              <input type="text" name="description" placeholder="t.ex. Lön, Frilansuppdrag" required />
             </label>
             <label>
-              Amount
+              Belopp
               <input type="number" name="amount" step="0.01" min="0.01" placeholder="0.00" required />
             </label>
-            <button type="submit" class="btn btn-income">Add Wage</button>
+            <button type="submit" class="btn btn-income">Lägg till lön</button>
           </form>
 
           <form id="expenseForm" class="entry-form hidden">
             <label>
-              Date
+              Datum
               <input type="date" name="date" required />
             </label>
             <label>
-              Category
+              Kategori
               <select name="category" required>
-                <option value="Housing">Housing</option>
-                <option value="Groceries">Groceries</option>
+                <option value="Housing">Boende</option>
+                <option value="Groceries">Livsmedel</option>
                 <option value="Transport">Transport</option>
-                <option value="Utilities">Utilities</option>
-                <option value="Health">Health</option>
-                <option value="Savings">Savings</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Subscriptions">Subscriptions</option>
-                <option value="Other">Other</option>
+                <option value="Utilities">Räkningar</option>
+                <option value="Health">Hälsa</option>
+                <option value="Savings">Sparande</option>
+                <option value="Entertainment">Nöje</option>
+                <option value="Subscriptions">Prenumerationer</option>
+                <option value="Other">Övrigt</option>
               </select>
             </label>
             <label>
-              Description
-              <input type="text" name="description" placeholder="e.g. Rent, Groceries" required />
+              Beskrivning
+              <input type="text" name="description" placeholder="t.ex. Hyra, Matinköp" required />
             </label>
             <label>
-              Amount
+              Belopp
               <input type="number" name="amount" step="0.01" min="0.01" placeholder="0.00" required />
             </label>
-            <button type="submit" class="btn btn-expense">Add Expense</button>
+            <button type="submit" class="btn btn-expense">Lägg till utgift</button>
           </form>
 
         </div>
 
         <div class="panel breakdown-panel">
-          <h2>Spending by category</h2>
+          <h2>Utgifter per kategori</h2>
           <div id="categoryChart" class="category-chart">
-            <p class="empty-hint">No expenses logged for this month yet.</p>
+            <p class="empty-hint">Inga utgifter registrerade denna månad än.</p>
           </div>
         </div>
       </section>
 
       <section class="panel list-panel">
         <div class="list-header">
-          <h2>Transactions</h2>
-          <span id="txCount" class="tx-count">0 entries</span>
+          <h2>Transaktioner</h2>
+          <span id="txCount" class="tx-count">0 poster</span>
         </div>
         <ul id="txList" class="tx-list">
-          <li class="empty-hint">No transactions yet. Add a wage or expense above.</li>
+          <li class="empty-hint">Inga transaktioner än. Lägg till en lön eller utgift ovan.</li>
         </ul>
       </section>
     </main>
 
     <footer class="app-footer">
-      <p>All data is stored locally in your browser and entered manually.</p>
+      <p>All data lagras lokalt i din webbläsare och matas in manuellt.</p>
     </footer>
   </div>
 

@@ -1,6 +1,6 @@
 {
-  "name": "Finance Tracker",
-  "short_name": "Finance",
+  "name": "Privatekonomi",
+  "short_name": "Ekonomi",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f6f8",

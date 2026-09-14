@@ -38,10 +38,26 @@ function todayISO() {
 }
 
 function formatMoney(value) {
-  return value.toLocaleString(undefined, {
+  return value.toLocaleString("sv-SE", {
     style: "currency",
-    currency: "USD",
+    currency: "SEK",
   });
+}
+
+const CATEGORY_LABELS = {
+  Housing: "Boende",
+  Groceries: "Livsmedel",
+  Transport: "Transport",
+  Utilities: "Räkningar",
+  Health: "Hälsa",
+  Savings: "Sparande",
+  Entertainment: "Nöje",
+  Subscriptions: "Prenumerationer",
+  Other: "Övrigt",
+};
+
+function categoryLabel(category) {
+  return CATEGORY_LABELS[category] || category;
 }
 
 function monthKeyOf(dateStr) {
@@ -97,10 +113,10 @@ function renderTransactionList() {
     .filter((t) => monthKeyOf(t.date) === monthKey)
     .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 
-  txCount.textContent = `${monthTx.length} ${monthTx.length === 1 ? "entry" : "entries"}`;
+  txCount.textContent = `${monthTx.length} ${monthTx.length === 1 ? "post" : "poster"}`;
 
   if (monthTx.length === 0) {
-    txList.innerHTML = `<li class="empty-hint">No transactions for this month yet.</li>`;
+    txList.innerHTML = `<li class="empty-hint">Inga transaktioner denna månad än.</li>`;
     return;
   }
 
@@ -109,7 +125,7 @@ function renderTransactionList() {
       const kind = txKind(t);
       const isIncome = kind === "income";
       const sign = isIncome ? "+" : "-";
-      const tag = isIncome ? "Wage" : t.category || "Expense";
+      const tag = isIncome ? "Lön" : categoryLabel(t.category) || "Utgift";
       return `
         <li class="tx-item ${kind}">
           <span class="tx-date">${t.date}</span>
@@ -118,7 +134,7 @@ function renderTransactionList() {
             <span class="tx-tag">${escapeHtml(tag)}</span>
           </span>
           <span class="tx-amount ${kind}">${sign}${formatMoney(t.amount)}</span>
-          <button class="tx-delete" data-id="${t.id}" title="Delete">&times;</button>
+          <button class="tx-delete" data-id="${t.id}" title="Ta bort">&times;</button>
         </li>`;
     })
     .join("");
@@ -129,7 +145,7 @@ function renderCategoryChart() {
   const expenses = transactions.filter((t) => t.type === "expense" && monthKeyOf(t.date) === monthKey);
 
   if (expenses.length === 0) {
-    categoryChart.innerHTML = `<p class="empty-hint">No expenses logged for this month yet.</p>`;
+    categoryChart.innerHTML = `<p class="empty-hint">Inga utgifter registrerade denna månad än.</p>`;
     return;
   }
 
@@ -146,7 +162,7 @@ function renderCategoryChart() {
       const kind = category === "Savings" ? "savings" : "expense";
       return `
         <div class="category-row">
-          <span>${escapeHtml(category)}</span>
+          <span>${escapeHtml(categoryLabel(category))}</span>
           <span class="category-bar-track"><span class="category-bar-fill ${kind}" style="width:${pct}%"></span></span>
           <span>${formatMoney(amount)}</span>
         </div>`;
