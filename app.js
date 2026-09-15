@@ -1,4 +1,5 @@
 const STORAGE_KEY = "finance-tracker-data-v1";
+const PAYDAY_DOM = 25;
 
 /** @typedef {{id:string, type:"wage"|"expense", date:string, description:string, category?:string, amount:number}} Transaction */
 
@@ -19,9 +20,9 @@ function saveTransactions(transactions) {
 
 let transactions = loadTransactions();
 
-const monthSelect = document.getElementById("monthSelect");
-const prevMonthBtn = document.getElementById("prevMonth");
-const nextMonthBtn = document.getElementById("nextMonth");
+const periodLabel = document.getElementById("periodLabel");
+const prevPeriodBtn = document.getElementById("prevMonth");
+const nextPeriodBtn = document.getElementById("nextMonth");
 const wageForm = document.getElementById("wageForm");
 const expenseForm = document.getElementById("expenseForm");
 const tabBtns = document.querySelectorAll(".tab-btn");
@@ -29,12 +30,115 @@ const txList = document.getElementById("txList");
 const txCount = document.getElementById("txCount");
 const categoryChart = document.getElementById("categoryChart");
 
-function currentMonthKey() {
-  return monthSelect.value;
+function todayISO() {
+  return toISODate(new Date());
 }
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+function toISODate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function normalizeYM(year, month) {
+  const d = new Date(year, month, 1);
+  return { year: d.getFullYear(), month: d.getMonth() };
+}
+
+/** Easter Sunday (Gregorian, Meeus/Jones/Butcher algorithm). */
+function easterSunday(year) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month, day);
+}
+
+/** Swedish public holidays ("röda dagar") that can fall on a weekday near the 25th. */
+function swedishHolidays(year) {
+  const dates = [
+    new Date(year, 0, 1), // Nyårsdagen
+    new Date(year, 0, 6), // Trettondedag jul
+    new Date(year, 4, 1), // Första maj
+    new Date(year, 5, 6), // Sveriges nationaldag
+    new Date(year, 11, 25), // Juldagen
+    new Date(year, 11, 26), // Annandag jul
+  ];
+  const easter = easterSunday(year);
+  dates.push(addDays(easter, -2)); // Långfredagen
+  dates.push(easter); // Påskdagen
+  dates.push(addDays(easter, 1)); // Annandag påsk
+  dates.push(addDays(easter, 39)); // Kristi himmelsfärdsdag
+  dates.push(addDays(easter, 49)); // Pingstdagen
+  return dates;
+}
+
+function isBusinessDay(date, holidays) {
+  const day = date.getDay();
+  if (day === 0 || day === 6) return false;
+  return !holidays.some((h) => toISODate(h) === toISODate(date));
+}
+
+/** Nearest weekday that isn't a weekend or a public holiday; ties go to the earlier day. */
+function nearestBusinessDay(date, holidays) {
+  if (isBusinessDay(date, holidays)) return date;
+  for (let offset = 1; offset <= 7; offset++) {
+    const back = addDays(date, -offset);
+    const fwd = addDays(date, offset);
+    if (isBusinessDay(back, holidays)) return back;
+    if (isBusinessDay(fwd, holidays)) return fwd;
+  }
+  return date;
+}
+
+/** The actual payday (25th, or nearest weekday around it) for a given year/month. */
+function getPayday(year, month) {
+  const { year: y, month: m } = normalizeYM(year, month);
+  const base = new Date(y, m, PAYDAY_DOM);
+  return nearestBusinessDay(base, swedishHolidays(y));
+}
+
+/** The {year, month} whose payday starts the pay period containing dateStr. */
+function periodAnchorForDate(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  const payday = getPayday(y, m - 1);
+  if (date >= payday) return { year: y, month: m - 1 };
+  return normalizeYM(y, m - 2);
+}
+
+function periodBounds(anchor) {
+  const start = getPayday(anchor.year, anchor.month);
+  const next = normalizeYM(anchor.year, anchor.month + 1);
+  const end = addDays(getPayday(next.year, next.month), -1);
+  return { start, end, startISO: toISODate(start), endISO: toISODate(end) };
+}
+
+function formatPeriodLabel(start, end) {
+  const startStr = start.toLocaleDateString("sv-SE", { day: "numeric", month: "long" });
+  const endStr = end.toLocaleDateString("sv-SE", { day: "numeric", month: "long", year: "numeric" });
+  return `${startStr} – ${endStr}`;
+}
+
+let currentAnchor = periodAnchorForDate(todayISO());
+
+function renderPeriodLabel() {
+  const { start, end } = periodBounds(currentAnchor);
+  periodLabel.textContent = formatPeriodLabel(start, end);
 }
 
 function formatMoney(value) {
@@ -60,26 +164,21 @@ function categoryLabel(category) {
   return CATEGORY_LABELS[category] || category;
 }
 
-function monthKeyOf(dateStr) {
-  return dateStr.slice(0, 7);
-}
-
 function txKind(t) {
   if (t.type === "wage") return "income";
   if (t.category === "Savings") return "savings";
   return "expense";
 }
 
-function shiftMonth(monthKey, delta) {
-  const [y, m] = monthKey.split("-").map(Number);
-  const d = new Date(y, m - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+function transactionsInCurrentPeriod() {
+  const { startISO, endISO } = periodBounds(currentAnchor);
+  return transactions.filter((t) => t.date >= startISO && t.date <= endISO);
 }
 
 function init() {
-  monthSelect.value = todayISO().slice(0, 7);
   wageForm.querySelector('input[name="date"]').value = todayISO();
   expenseForm.querySelector('input[name="date"]').value = todayISO();
+  renderPeriodLabel();
   renderAll();
 }
 
@@ -90,11 +189,10 @@ function renderAll() {
 }
 
 function renderSummary() {
-  const monthKey = currentMonthKey();
-  const monthTx = transactions.filter((t) => monthKeyOf(t.date) === monthKey);
+  const periodTx = transactionsInCurrentPeriod();
 
-  const income = monthTx.filter((t) => t.type === "wage").reduce((s, t) => s + t.amount, 0);
-  const expense = monthTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const income = periodTx.filter((t) => t.type === "wage").reduce((s, t) => s + t.amount, 0);
+  const expense = periodTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
   const balance = income - expense;
 
   const totalIncome = transactions.filter((t) => t.type === "wage").reduce((s, t) => s + t.amount, 0);
@@ -108,19 +206,18 @@ function renderSummary() {
 }
 
 function renderTransactionList() {
-  const monthKey = currentMonthKey();
-  const monthTx = transactions
-    .filter((t) => monthKeyOf(t.date) === monthKey)
-    .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  const periodTx = transactionsInCurrentPeriod().sort(
+    (a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)
+  );
 
-  txCount.textContent = `${monthTx.length} ${monthTx.length === 1 ? "post" : "poster"}`;
+  txCount.textContent = `${periodTx.length} ${periodTx.length === 1 ? "post" : "poster"}`;
 
-  if (monthTx.length === 0) {
-    txList.innerHTML = `<li class="empty-hint">Inga transaktioner denna månad än.</li>`;
+  if (periodTx.length === 0) {
+    txList.innerHTML = `<li class="empty-hint">Inga transaktioner denna period än.</li>`;
     return;
   }
 
-  txList.innerHTML = monthTx
+  txList.innerHTML = periodTx
     .map((t) => {
       const kind = txKind(t);
       const isIncome = kind === "income";
@@ -141,11 +238,10 @@ function renderTransactionList() {
 }
 
 function renderCategoryChart() {
-  const monthKey = currentMonthKey();
-  const expenses = transactions.filter((t) => t.type === "expense" && monthKeyOf(t.date) === monthKey);
+  const expenses = transactionsInCurrentPeriod().filter((t) => t.type === "expense");
 
   if (expenses.length === 0) {
-    categoryChart.innerHTML = `<p class="empty-hint">Inga utgifter registrerade denna månad än.</p>`;
+    categoryChart.innerHTML = `<p class="empty-hint">Inga utgifter registrerade denna period än.</p>`;
     return;
   }
 
@@ -199,7 +295,8 @@ function addTransaction(type, form) {
   form.reset();
   form.querySelector('input[name="date"]').value = dateValue;
 
-  monthSelect.value = monthKeyOf(tx.date);
+  currentAnchor = periodAnchorForDate(tx.date);
+  renderPeriodLabel();
   renderAll();
 }
 
@@ -232,15 +329,15 @@ txList.addEventListener("click", (e) => {
   renderAll();
 });
 
-monthSelect.addEventListener("change", renderAll);
-
-prevMonthBtn.addEventListener("click", () => {
-  monthSelect.value = shiftMonth(currentMonthKey(), -1);
+prevPeriodBtn.addEventListener("click", () => {
+  currentAnchor = normalizeYM(currentAnchor.year, currentAnchor.month - 1);
+  renderPeriodLabel();
   renderAll();
 });
 
-nextMonthBtn.addEventListener("click", () => {
-  monthSelect.value = shiftMonth(currentMonthKey(), 1);
+nextPeriodBtn.addEventListener("click", () => {
+  currentAnchor = normalizeYM(currentAnchor.year, currentAnchor.month + 1);
+  renderPeriodLabel();
   renderAll();
 });
 

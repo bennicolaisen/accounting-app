@@ -20,24 +20,24 @@
         <h1>Privatekonomi</h1>
       </div>
       <div class="month-picker">
-        <button id="prevMonth" class="icon-btn" title="Föregående månad">&larr;</button>
-        <input type="month" id="monthSelect" />
-        <button id="nextMonth" class="icon-btn" title="Nästa månad">&rarr;</button>
+        <button id="prevMonth" class="icon-btn" title="Föregående löneperiod">&larr;</button>
+        <span id="periodLabel" class="period-label"></span>
+        <button id="nextMonth" class="icon-btn" title="Nästa löneperiod">&rarr;</button>
       </div>
     </header>
 
     <main>
       <section class="summary-grid">
         <div class="card summary-card income">
-          <span class="card-label">Lön denna månad</span>
+          <span class="card-label">Lön denna period</span>
           <span class="card-value" id="sumIncome">0,00 kr</span>
         </div>
         <div class="card summary-card expense">
-          <span class="card-label">Utgifter denna månad</span>
+          <span class="card-label">Utgifter denna period</span>
           <span class="card-value" id="sumExpense">0,00 kr</span>
         </div>
         <div class="card summary-card balance">
-          <span class="card-label">Saldo denna månad</span>
+          <span class="card-label">Saldo denna period</span>
           <span class="card-value" id="sumBalance">0,00 kr</span>
         </div>
         <div class="card summary-card total">
@@ -104,7 +104,7 @@
         <div class="panel breakdown-panel">
           <h2>Utgifter per kategori</h2>
           <div id="categoryChart" class="category-chart">
-            <p class="empty-hint">Inga utgifter registrerade denna månad än.</p>
+            <p class="empty-hint">Inga utgifter registrerade denna period än.</p>
           </div>
         </div>
       </section>

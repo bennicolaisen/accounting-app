@@ -72,13 +72,15 @@ body {
   gap: 8px;
 }
 
-.month-picker input[type="month"] {
-  padding: 8px 10px;
+.period-label {
+  padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface);
   font-size: 14px;
+  font-weight: 600;
   color: var(--text);
+  white-space: nowrap;
 }
 
 .icon-btn {
@@ -372,5 +374,10 @@ body {
   }
   .tx-date {
     grid-column: 1 / -1;
+  }
+  .period-label {
+    font-size: 12.5px;
+    white-space: normal;
+    text-align: center;
   }
 }
